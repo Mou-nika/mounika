@@ -1,0 +1,46 @@
+#include <SPI.h>
+#include <SD.h>
+#include <DHT.h>
+
+#define DHTPIN 2      // DHT sensor data pin
+#define DHTTYPE DHT11 // DHT11 or DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+const int chipSelect = 10; // SD module CS pin
+
+void setup() {
+    Serial.begin(9600);
+    dht.begin();
+
+    if (!SD.begin(chipSelect)) {
+        Serial.println("SD card initialization failed!");
+        return;
+    }
+    Serial.println("SD card initialized.");
+}
+
+void loop() {
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+
+    if (isnan(temperature) || isnan(humidity)) {
+        Serial.println("Failed to read from DHT sensor!");
+        return;
+    }
+
+    Serial.print("Temperature: "); Serial.print(temperature); Serial.print(" °C, ");
+    Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" %");
+
+    // Save data to SD card
+    File dataFile = SD.open("weather_log.txt", FILE_WRITE);
+    if (dataFile) {
+        dataFile.print("Temperature: "); dataFile.print(temperature); dataFile.print(" °C, ");
+        dataFile.print("Humidity: "); dataFile.print(humidity); dataFile.println(" %");
+        dataFile.close();
+        Serial.println("Data saved to SD card.");
+    } else {
+        Serial.println("Error opening file.");
+    }
+
+    delay(5000); // Log data every 5 seconds
+}
